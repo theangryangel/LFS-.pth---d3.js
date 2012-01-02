@@ -1,0 +1,177 @@
+<html>
+	<head>
+		<title>Drawing a LFS track using d3.js and converted pth files</title>
+		<script src="d3.min.js"></script>
+		<style>
+			.track
+			{
+				stroke: #ccc;
+				stroke-width: 10; 
+				fill: none;
+			}
+			.title
+			{
+				font-family: Arial, Helvetica, sans-serif;
+				font-size: 0.75em;
+				color: #ccc;
+			}
+			.player
+			{
+				stroke: #fff;
+				stroke-width: 2; 
+				fill: brown;
+			}
+			#graph 
+			{
+				width:100px;
+				height:768px;
+				border:1px solid #ccc;
+
+				margin-left: auto;
+				margin-right:auto;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="graph"></div>
+		<script>
+			// Get our json path data
+			d3.json(
+				'pth/BL2.json',
+				function (data)
+				{
+					drawTrack(data);
+				}
+			);
+
+			function drawTrack(data)
+			{
+				// create an SVG element inside the #graph div that fills 100% of the div
+				var graph = d3.select("#graph")
+					.append("svg:svg")
+					.attr("width", "100%")
+					.attr("height", "100%");
+
+				// Find the minimum and maximum x and y values for our data
+				// We'll use this later
+				var min = { x: 0, y: 0 };
+				var max = { x: 0, y: 0 };
+
+				for (d in data.nodes)
+				{
+					if (data.nodes[d].x > max.x)
+						max.x = data.nodes[d].x;
+
+					if (data.nodes[d].x < min.x)
+						min.x = data.nodes[d].x;
+
+					if (data.nodes[d].y > max.y)
+						max.y = data.nodes[d].y;
+
+					if (data.nodes[d].y < min.y)
+						min.y = data.nodes[d].y;
+				}
+
+				// This is the current height of #graph
+				// In this example we'll assume that we want height to stay
+				// statically the same, and that the width scales dependant on
+				// the track, which would allow us to center the image easily
+				// 20 is removed as we want to have a nice gap around our track
+				// path
+				var height = d3.select("#graph").style('height').replace('px','')-20;
+
+				// Scaling factor
+				// This is a bit simple, but works for all but the very "narrow"
+				// tracks
+				var scalingfactor = ((max.y-min.y)/height);
+
+				// This is our scaled width
+				var width = ((max.x-min.x)/scalingfactor);
+
+				// Set the width
+				d3.select("#graph").style('width', (width+20) + 'px');
+
+				// Y scale will fit values our min and max value within pixels
+				// 20-height
+				var y = d3.scale.linear().domain([min.y, max.y]).range([20, height]);
+
+				// X scale will fit values from 0-10 within pixels 20-scaledx
+				var x = d3.scale.linear().domain([min.x, max.x]).range([20, width]);
+
+				// Create a line object/function that represents the track line 
+				// we're creating
+				var line = d3.svg.line()
+				// assign the X function that understands how to get the X
+				// coordinate from our json data
+				.x(function(d,i)
+				{
+					// Because we'll be passing in lines(data.nodes), d will
+					// represent data.nodes[i]
+					return x(d.x);
+				})
+				// assign the Y function that understands how to get the Y
+				// coordinate from our json data
+				.y(function(d)
+				{
+					// Because we'll be passing in lines(data.nodes), d will
+					// represent data.nodes[i]
+					return y(d.y);
+				})
+				// Basis-closed means that we want a closed loop. Using Basis as
+				// although the nodes should not over lap from our json file, we
+				// cannot guarantee that, and basis-closed permits this
+				.interpolate("basis-closed");
+
+				// Display the track by appending an svg:path element, made up
+				// of points using the nodes
+				// We do this by calling the function/object "line", that we
+				// created earlier. This translates our data.nodes to the
+				// corresponding x,y coordinates for display
+				// Set the class for the path to "track"
+				graph.append("svg:path").attr("d", line(data.nodes)).attr("class", "track");
+
+				// Add the track name
+				var title = graph.append("text")
+					.attr("class", "title")
+					.attr("y", 20)
+					.attr("x", 10)
+					.text(data.track + ' (resolution: ~' + data.resolution + ')');
+
+				// Add the start finish line - At some point we'll need to aline
+				// this to the track orientation
+				var startfinish = graph.append("svg:rect")
+					.attr("x", x(data.startfinish.x)-5)
+					.attr("y", y(data.startfinish.y))
+					.attr("width", 10)
+					.attr("height", 2)
+					.style("fill", "#666");
+
+				// Add a circle to the track. You could use this to demonstrate
+				// where a player/vehicle is on-track
+				var circle = graph.append("svg:circle")
+					.attr("r", 4)
+					.attr("cx", x(data.startfinish.x))
+					.attr("cy", y(data.startfinish.y))
+					.attr("class", "player");
+
+				// Demonstrates how to move the circle, based on your current
+				// mouse position. You should understand that as long as you can
+				// reference the circle, you can move it however you want,
+				// without a full re-calcuation of the track and all players
+				// If you have a json feed of current player positions, you'll
+				// just need to use the same x() and y() functions defined above
+				// to translate their position to the relative position on our
+				// drawn image
+				graph.on("mousemove", function()
+				{
+					var m0 = [+circle.attr("cx"), +circle.attr("cy")],
+					m1 = d3.svg.mouse(this);
+					circle
+					.attr("cx", m0[0] + (m1[0] - m0[0]) * .2)
+					.attr("cy", m0[1] + (m1[1] - m0[1]) * .2);
+				});
+			}
+		</script>
+	</body>
+</html>
+

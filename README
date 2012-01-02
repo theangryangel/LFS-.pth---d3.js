@@ -1,0 +1,15 @@
+Example of drawing LFS tracks, using d3.js and pth files
+--------------------------------------------------------
+Could be used for a "light-weight" live tracker.
+
+I've provided my own converted pth files (in pth/), but also the rough code
+to generate the json files from the original pths.
+
+Known Issues:
+  * Track doesn't match the same orientation as LFS
+  * Doesn't take into account the actual track width - only uses the center
+    coordinates
+
+Requires:
+  * d3.min.js
+  * Any modern browser
