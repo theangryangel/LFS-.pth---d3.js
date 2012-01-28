@@ -1,6 +1,10 @@
 Example of drawing LFS tracks, using d3.js and pth files
 --------------------------------------------------------
-Could be used for a "light-weight" live tracker.
+Could be used for a "light-weight" live tracker. See xi4n's livemap plugin as an
+example - https://github.com/theangryangel/XI4N.
+
+It also has a much tidier version that has practical usage, rather than being a
+very simple explanation.
 
 I've provided my own converted pth files (in pth/), but also the rough code
 to generate the json files from the original pths.
